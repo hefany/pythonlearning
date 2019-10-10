@@ -1,0 +1,105 @@
+# coding:utf-8
+# 
+
+
+import urllib.parse
+import requests
+import time
+import json
+import random
+
+'''
+https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&ct=201326592&is=&fp=result&query{}&cl=2&lm=-1&ie=utf-8&oe=utf-8&adpicid=&st=-1&z=&ic=0&hd=&latest=&copyright=&{}&s=&se=&tab=&width=&height=&face=0&istype=2&qc=&nc=1&fr=&expermode=&force=&pn={}&rn=30&gsm=&{}=
+
+'''
+
+
+
+
+
+#信息输入
+def baidu_input():
+	key_words = input('请输入你想要的爬取图片的关键字：')
+	wd = {'Word':key_words}
+	word = urllib.parse.urlencode(wd)
+	return word
+
+#构建请求
+def baidu_requests(word):
+	headers = {
+		'Accept':'text/plain, */*; q=0.01',
+		'Accept-Encoding':'gzip, deflate, br',
+		'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+		# 'Connection':'keep-alive',
+		# 'Host':'image.baidu.com',
+		'User-Agent':'Mozilla/5.0 (Windows NT 6.1; rv:69.0) Gecko/20100101 Firefox/69.0',
+		# 'X-Requested-With':'XMLHttpRequest',
+	}
+	url = "https://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&ct=201326592&is=&fp=result&query{}&cl=2&lm=-1&ie=utf-8&oe=utf-8&adpicid=&st=-1&z=&ic=0&hd=&latest=&copyright=&{}&s=&se=&tab=&width=&height=&face=0&istype=2&qc=&nc=1&fr=&expermode=&force=&pn={}&rn=30&gsm=&{}="
+	time_one =int(time.time()) 
+	
+	pages = input('请输入你想要爬取的页面数量：')
+	pages = int(pages)
+	s = requests.Session()
+	url_two = "https://image.baidu.com"
+	s.get(url_two)
+	cookies = s.cookies
+
+	set_url = []
+
+	for i in range(1,pages+1):
+		page = 30 * i
+		url_one = url.format(word,word, page,time_one)
+		
+		try:
+			respones = requests.get(url_one , headers =headers ,cookies = cookies)
+			if respones.status_code == 200 :
+				print('第{}爬取成功。'.format(i))
+		except :
+			print('第{}爬取失败，爬取下一页。')
+			continue
+		time.sleep(random.randint(3,10))
+
+		html = json.loads(respones.text)
+		print(type(html))
+		pc_url = html["data"]
+		for m in pc_url:
+			try:
+				pc_url = m["thumbURL"]
+
+				if pc_url in set_url:
+					continue
+				else:
+					set_url.append(pc_url)
+					imag = requests.get(pc_url ,headers = headers,cookies = cookies )
+					image_name = pc_url.split('/')[-1]
+					with open(image_name+'.jpg' ,'wb') as f :
+						f.write(imag.content)
+					print('{}已经成功下载。'.format(image_name))
+			except:
+				print('爬取失败，爬取下一张图片。')
+				continue
+	print(set_url)
+
+		
+
+
+
+
+
+
+
+
+
+
+
+def main():
+	#信息输入
+	word = baidu_input()
+	#构建请求
+	baidu_requests(word)
+	print('爬取完毕。')
+
+
+if __name__ == '__main__':
+	main()
